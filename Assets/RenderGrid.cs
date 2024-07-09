@@ -14,8 +14,9 @@ public class RenderGrid : MonoBehaviour
 		Tilemap tilemap = GetComponent<Tilemap>();
 
 		Tile border = Resources.Load<Tile>("Borders/Red");
-		Tile fill = Resources.Load<Tile>("Cells/Black");
-		Tile fillEvent = Resources.Load<Tile>("Cells/White");
+		Tile fill = Resources.Load<Tile>("Cells/White");
+
+		Color[] colours = new Color[] { Color.yellow, Color.red, Color.green, Color.blue, Color.cyan, Color.magenta };
 
 		for (int y = -GRID_SIZE; y < GRID_SIZE; ++y)
 		{
@@ -24,18 +25,9 @@ public class RenderGrid : MonoBehaviour
 				Vector3Int pos = new Vector3Int(x, y, 0);
 
 				tilemap.SetTile(new Vector3Int(x, y, 10), border);
-				if (Math.Abs(x % 2) == Math.Abs(y % 2))
-				{
-					tilemap.SetTile(pos, fillEvent);
-				}
-				else
-				{
-					tilemap.SetTile(new Vector3Int(x, y, 0), fill);
-				}
-
-				Color c = new Color(255f, 255f, 0f, 1f);
-				tilemap.SetColor(pos, c);
-				tilemap.RefreshTile(pos);
+				tilemap.SetTile(pos, fill);
+				tilemap.SetTileFlags(pos, TileFlags.None);
+				tilemap.SetColor(pos, colours[(Math.Abs(x) + Math.Abs(y)) % 6]);
 			}
 		}
 	}
