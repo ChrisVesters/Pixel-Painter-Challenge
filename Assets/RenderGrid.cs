@@ -8,7 +8,8 @@ using UnityEngine.UIElements;
 
 public class RenderGrid : MonoBehaviour
 {
-	private const int GRID_SIZE = 6;
+	private const int GRID_SIZE_X = 6;
+	private const int GRID_SIZE_Y = 6;
 
 	private Tilemap tilemap;
 
@@ -23,9 +24,9 @@ public class RenderGrid : MonoBehaviour
 
 		Color[] colours = new Color[] { Color.yellow, Color.red, Color.green, Color.blue, Color.cyan, Color.magenta };
 
-		for (int y = -GRID_SIZE; y < GRID_SIZE; ++y)
+		for (int y = -GRID_SIZE_Y; y < GRID_SIZE_Y; ++y)
 		{
-			for (int x = -GRID_SIZE; x < GRID_SIZE; ++x)
+			for (int x = -GRID_SIZE_X; x < GRID_SIZE_X; ++x)
 			{
 				Vector3Int borderPos = new Vector3Int(x, y, 10);
 				Vector3Int pos = new Vector3Int(x, y, 0);
