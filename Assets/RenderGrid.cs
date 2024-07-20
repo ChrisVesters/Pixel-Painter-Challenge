@@ -19,8 +19,8 @@ public class RenderGrid : MonoBehaviour
 	{
 		tilemap = GetComponent<Tilemap>();
 
-		Tile border = Resources.Load<Tile>("Borders/White");
-		Tile fill = Resources.Load<Tile>("Cells/White");
+		Tile border = Resources.Load<Tile>("Border");
+		Tile fill = Resources.Load<Tile>("Fill");
 
 		Color[] colours = new Color[] { Color.yellow, Color.red, Color.green, Color.blue, Color.cyan, Color.magenta };
 
@@ -33,12 +33,11 @@ public class RenderGrid : MonoBehaviour
 
 				tilemap.SetTile(borderPos, border);
 				tilemap.SetTileFlags(borderPos, TileFlags.None);
-				// tilemap.SetColor(borderPos, colours[(Math.Abs(x) + Math.Abs(y)) % 6]);
+				tilemap.SetColor(borderPos, colours[(Math.Abs(x) + Math.Abs(y)) % 6]);
 
 				tilemap.SetTile(pos, fill);
 				tilemap.SetTileFlags(pos, TileFlags.None);
-				tilemap.SetColor(pos, colours[Math.Abs(x) * Math.Abs(y) % 6]);
-				tilemap.SetColor(pos, colours[(Math.Abs(x) + Math.Abs(y)) % 6]);
+				// tilemap.SetColor(pos, colours[Math.Abs(x) * Math.Abs(y) % 6]);
 			}
 		}
 	}
