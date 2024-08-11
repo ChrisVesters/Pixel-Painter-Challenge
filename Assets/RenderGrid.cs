@@ -1,6 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+
+// using System.Numerics;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -17,14 +20,17 @@ public class RenderGrid : MonoBehaviour
 
 	private Tilemap tilemap;
 
-	private Vector3Int? coloringStartPoint;
+	private readonly List<Vector3Int> points = new();
+	private Vector3Int? hoverPosition = null;
+
+	private Tile fill;
 
 	void Start()
 	{
 		tilemap = GetComponent<Tilemap>();
+		fill = Resources.Load<Tile>("Fill");
 
 		Tile border = Resources.Load<Tile>("Border");
-		Tile fill = Resources.Load<Tile>("Fill");
 
 		Color[] colours = new Color[] { Color.yellow, Color.red, Color.green, Color.blue, Color.cyan, Color.magenta };
 
@@ -41,7 +47,6 @@ public class RenderGrid : MonoBehaviour
 
 				tilemap.SetTile(pos, fill);
 				tilemap.SetTileFlags(pos, TileFlags.None);
-				// tilemap.SetColor(pos, colours[Math.Abs(x) * Math.Abs(y) % 6]);
 			}
 		}
 	}
@@ -58,45 +63,56 @@ public class RenderGrid : MonoBehaviour
 		// Close the shape (and paint it) by clicking on the start pixel.
 		// Note: Single pixel paining is not possible and simply clears it.
 		// Note: You can only remove the last point (by clicking on it).
-		// Note only convex shapes are allowed
-		if (Input.GetMouseButtonDown(0))
-		{
-			if (IsValidTilePosition(cellPos))
-			{
-				coloringStartPoint = cellPos;
-
-				highlight(cellPos);
-			}
-		}
-
+		// Note No crossing lines are allowed.
 		if (Input.GetMouseButtonUp(0))
 		{
-			if (IsValidTilePosition(cellPos))
+			hoverPosition = null;
+
+			if (!IsValidTilePosition(cellPos))
 			{
-				if (coloringStartPoint.HasValue)
+				points.Clear();
+				// TODO: remove all highlighting.
+				return;
+			}
+
+			if (points.Count == 0)
+			{
+				Highlight(cellPos);
+				points.Add(cellPos);
+				return;
+			}
+
+			if (IsValidPoint(cellPos))
+			{
+				if (points.First() == cellPos)
 				{
-					tilemap.SetColor(coloringStartPoint.Value, Color.black);
-					tilemap.SetColor(cellPos, Color.black);
+					Debug.Log("Completed shape");
+					// TODO: color the shape.
+					points.Clear();
+				}
+				else
+				{
+					points.Add(cellPos);
 				}
 			}
-
-			if (coloringStartPoint.HasValue)
-			{
-				clearHightlight(coloringStartPoint.Value);
-			}
-
-			coloringStartPoint = null;
 		}
 
-		if (Input.GetMouseButton(0))
+		if (points.Count == 0)
 		{
-			// TODO: if cursor out of bounds, clear highlight?
-			if (IsValidTilePosition(cellPos))
-			{
-				// Highlight up to here from the start.
-				highlight(cellPos);
-			}
+			return;
 		}
+
+		if (hoverPosition.HasValue && IsValidPoint(hoverPosition.Value))
+		{
+			ClearHighlight(points.Last(), hoverPosition.Value);
+		}
+
+		if (IsValidPoint(cellPos))
+		{
+			Highlight(points.Last(), cellPos);
+		}
+
+		hoverPosition = cellPos;
 	}
 
 	private bool IsValidTilePosition(Vector3Int position)
@@ -104,15 +120,96 @@ public class RenderGrid : MonoBehaviour
 		return tilemap.GetTile(position) != null;
 	}
 
-	private bool isStraightLine(Vector3Int start, Vector3Int end)
+	private bool IsValidPoint(Vector3Int end)
 	{
-		return start.x == end.x || start.y == end.y;
+		// TODO: add out of bounds check
+		// TODO: add logic for crossing.
+
+		Vector3Int start = points.Last();
+		return IsValidLine(start, end) && !CrossesOtherLines(start, end);
 	}
 
-	private void highlight(Vector3Int cell)
+	private bool IsValidLine(Vector3Int start, Vector3Int end)
 	{
-		Tile fill = Resources.Load<Tile>("Fill");
+		// TODO: add logic for crossing.
 
+		int deltaX = start.x - end.x;
+		int deltaY = start.y - end.y;
+
+		if (deltaX == 0 && deltaY == 0)
+		{
+			return false;
+		}
+
+		return deltaX == 0 || deltaY == 0
+			|| Math.Abs(deltaX) == Math.Abs(deltaY);
+	}
+
+	private bool CrossesOtherLines(Vector3Int start, Vector3Int end)
+	{
+		int minX = Math.Min(start.x, end.x);
+		int maxX = Math.Max(start.x, end.x);
+		int minY = Math.Min(start.y, end.y);
+		int maxY = Math.Max(start.y, end.y);
+
+		int deltaX = maxX - minX;
+		int deltaY = maxY - minY;
+
+		for (int index = 0; index < points.Count - 1; index++)
+		{
+			Vector3Int lineStart = points[index];
+			Vector3Int lineEnd = points[index + 1];
+
+			int lineMinX = Math.Min(lineStart.x, lineEnd.x);
+			int lineMaxX = Math.Max(lineStart.x, lineEnd.x);
+			int lineMinY = Math.Min(lineStart.y, lineEnd.y);
+			int lineMaxY = Math.Max(lineStart.y, lineEnd.y);
+
+			// Vertical line
+			if (deltaX == 0)
+			{
+				// (lineMinX < minX && lineMaxX > maxX) && (
+				// 	lineMinY < minY && lineMaxY > maxY)
+				
+			}
+			// Horizontal line
+			else if (deltaY == 0)
+			{
+
+			}
+		}
+
+		return false;
+	}
+
+
+
+	private Vector3Int[] GetLinePositions(Vector3Int start, Vector3Int end)
+	{
+		int deltaX = end.x - start.x;
+		int deltaY = end.y - start.y;
+
+		if (deltaX == 0 && deltaY == 0)
+		{
+			return new Vector3Int[0] { };
+		}
+
+		int steps = Math.Max(Math.Abs(deltaX), Math.Abs(deltaY));
+		int stepX = deltaX / steps;
+		int stepY = deltaY / steps;
+
+		Vector3Int[] positions = new Vector3Int[steps];
+		for (int step = 1; step <= steps; ++step)
+		{
+			Vector3Int position = new(start.x + step * stepX, start.y + step * stepY, start.z);
+			positions[step - 1] = position;
+		}
+
+		return positions;
+	}
+
+	private void Highlight(Vector3Int cell)
+	{
 		Color source = Color.yellow;
 		Color color = new Color(source.r, source.g, source.b, 0.5f);
 		Vector3Int highlightPos = new Vector3Int(cell.x, cell.y, Z_LAYER_HIGHLIGHT);
@@ -122,9 +219,27 @@ public class RenderGrid : MonoBehaviour
 		tilemap.SetColor(highlightPos, color);
 	}
 
-	private void clearHightlight(Vector3Int cell)
+	private void Highlight(Vector3Int start, Vector3Int end)
+	{
+		Vector3Int[] positions = GetLinePositions(start, end);
+		for (int i = 0; i < positions.Length; ++i)
+		{
+			Highlight(positions[i]);
+		}
+	}
+
+	private void ClearHighlight(Vector3Int cell)
 	{
 		Vector3Int highlightPos = new Vector3Int(cell.x, cell.y, Z_LAYER_HIGHLIGHT);
 		tilemap.SetTile(highlightPos, null);
+	}
+
+	private void ClearHighlight(Vector3Int start, Vector3Int end)
+	{
+		Vector3Int[] positions = GetLinePositions(start, end);
+		for (int i = 0; i < positions.Length; ++i)
+		{
+			ClearHighlight(positions[i]);
+		}
 	}
 }
