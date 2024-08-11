@@ -145,38 +145,37 @@ public class RenderGrid : MonoBehaviour
 			|| Math.Abs(deltaX) == Math.Abs(deltaY);
 	}
 
+	// To find orientation of ordered triplet (s(tart), m(iddle), e(nd)). 
+	// The function returns following values 
+	// 0 --> p, q and r are collinear 
+	// 1 --> Clockwise 
+	// -1 --> Counterclockwise 
+	private int Orientation(Vector3Int s, Vector3Int m, Vector3Int e)
+	{
+		return Math.Sign((m.y - s.y) * (e.x - m.x) - (m.x - s.x) * (e.y - m.y));
+	}
+
 	private bool CrossesOtherLines(Vector3Int start, Vector3Int end)
 	{
-		int minX = Math.Min(start.x, end.x);
-		int maxX = Math.Max(start.x, end.x);
-		int minY = Math.Min(start.y, end.y);
-		int maxY = Math.Max(start.y, end.y);
-
-		int deltaX = maxX - minX;
-		int deltaY = maxY - minY;
-
 		for (int index = 0; index < points.Count - 1; index++)
 		{
 			Vector3Int lineStart = points[index];
 			Vector3Int lineEnd = points[index + 1];
 
-			int lineMinX = Math.Min(lineStart.x, lineEnd.x);
-			int lineMaxX = Math.Max(lineStart.x, lineEnd.x);
-			int lineMinY = Math.Min(lineStart.y, lineEnd.y);
-			int lineMaxY = Math.Max(lineStart.y, lineEnd.y);
+			int o1 = Orientation(start, end, lineStart);
+			int o2 = Orientation(start, end, lineEnd);
+			int o3 = Orientation(lineStart, lineEnd, start);
+			int o4 = Orientation(lineStart, lineEnd, end);
 
-			// Vertical line
-			if (deltaX == 0)
-			{
-				// (lineMinX < minX && lineMaxX > maxX) && (
-				// 	lineMinY < minY && lineMaxY > maxY)
-				
+			Debug.Log(o1 + " " + o2 + " " + o3 + " " + o4);
+			if (o1 != o2 && o3 != o4) {
+				Debug.Log("Crossing 1");
+				return true;
 			}
-			// Horizontal line
-			else if (deltaY == 0)
-			{
 
-			}
+			// TODO: special cases.
+			// Which one do we need to support?
+			// https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
 		}
 
 		return false;
