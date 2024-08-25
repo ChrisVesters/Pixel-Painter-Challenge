@@ -88,6 +88,7 @@ public class RenderGrid : MonoBehaviour
 				{
 					Debug.Log("Completed shape");
 					// TODO: color the shape.
+					// TODO: remove highlight.
 					points.Clear();
 				}
 				else
@@ -122,8 +123,10 @@ public class RenderGrid : MonoBehaviour
 
 	private bool IsValidPoint(Vector3Int end)
 	{
-		// TODO: add out of bounds check
-		// TODO: add logic for crossing.
+		if (!IsValidTilePosition(end))
+		{
+			return false;
+		}
 
 		Vector3Int start = points.Last();
 		return IsValidLine(start, end) && !CrossesOtherLines(start, end);
@@ -131,8 +134,6 @@ public class RenderGrid : MonoBehaviour
 
 	private bool IsValidLine(Vector3Int start, Vector3Int end)
 	{
-		// TODO: add logic for crossing.
-
 		int deltaX = start.x - end.x;
 		int deltaY = start.y - end.y;
 
@@ -145,19 +146,36 @@ public class RenderGrid : MonoBehaviour
 			|| Math.Abs(deltaX) == Math.Abs(deltaY);
 	}
 
-	// To find orientation of ordered triplet (s(tart), m(iddle), e(nd)). 
-	// The function returns following values 
-	// 0 --> p, q and r are collinear 
-	// 1 --> Clockwise 
-	// -1 --> Counterclockwise 
+	// To find orientation of ordered triplet (s(tart), m(iddle), e(nd)).
+	// The function returns following values
+	// 0 --> p, q and r are collinear
+	// 1 --> Clockwise
+	// -1 --> Counterclockwise
 	private int Orientation(Vector3Int s, Vector3Int m, Vector3Int e)
 	{
 		return Math.Sign((m.y - s.y) * (e.x - m.x) - (m.x - s.x) * (e.y - m.y));
 	}
 
+	// Check if point lies on the segment se.
+	// Note: This method only works if the points are collinear.
+	private bool OnSegment(Vector3Int s, Vector3Int e, Vector3Int point)
+	{
+		bool overlapX = point.x <= Math.Max(s.x, e.x) && point.x >= Math.Min(s.x, e.x);
+		bool overlapY = point.y <= Math.Max(s.y, e.y) && point.y >= Math.Min(s.y, e.y);
+
+		return overlapX && overlapY;
+	}
+
 	private bool CrossesOtherLines(Vector3Int start, Vector3Int end)
 	{
-		for (int index = 0; index < points.Count - 1; index++)
+		// Well, no, not if there is no other segment yet.
+		int startIndex = 0;
+		if ((points.Count > 2) && (end == points.First()))
+		{
+			startIndex = 1;
+		}
+
+		for (int index = startIndex; index < points.Count - 1; index++)
 		{
 			Vector3Int lineStart = points[index];
 			Vector3Int lineEnd = points[index + 1];
@@ -167,21 +185,56 @@ public class RenderGrid : MonoBehaviour
 			int o3 = Orientation(lineStart, lineEnd, start);
 			int o4 = Orientation(lineStart, lineEnd, end);
 
-			Debug.Log(o1 + " " + o2 + " " + o3 + " " + o4);
-			if (o1 != o2 && o3 != o4) {
-				Debug.Log("Crossing 1");
+			if (start == lineEnd)
+			{
+				// Check if segment goes back on previous segment.
+				// If o1 is not 0, then the segements are not on the same line.
+				if (o1 != 0)
+				{
+					return false;
+				}
+
+				// Check direction of segments.
+				int xDirection = Math.Sign(end.x - start.x);
+				int yDirection = Math.Sign(end.y - start.y);
+
+				int lineXDirection = Math.Sign(lineEnd.x - lineStart.x);
+				int lineYDirection = Math.Sign(lineEnd.y - lineStart.y);
+
+				return (xDirection != lineXDirection) || (yDirection != lineYDirection);
+			}
+
+			if (o1 != o2 && o3 != o4)
+			{
 				return true;
 			}
 
-			// TODO: special cases.
-			// Which one do we need to support?
-			// https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
+			Debug.Log(o1 + " " + o2 + " " + o3 + " " + o4);
+			// Existing segment and new segment are on the same line.
+			// Check for overlaps.
+			if (o1 == 0 && OnSegment(start, end, lineStart))
+			{
+				return true;
+			}
+
+			if (o2 == 0 && OnSegment(start, end, lineEnd))
+			{
+				return true;
+			}
+
+			if (o3 == 0 && OnSegment(lineStart, lineEnd, start))
+			{
+				return true;
+			}
+
+			if (o4 == 0 && OnSegment(lineStart, lineEnd, end))
+			{
+				return true;
+			}
 		}
 
 		return false;
 	}
-
-
 
 	private Vector3Int[] GetLinePositions(Vector3Int start, Vector3Int end)
 	{
@@ -238,6 +291,12 @@ public class RenderGrid : MonoBehaviour
 		Vector3Int[] positions = GetLinePositions(start, end);
 		for (int i = 0; i < positions.Length; ++i)
 		{
+			// Don't clear the starting point.
+			if (positions[i] == points[0])
+			{
+				continue;
+			}
+
 			ClearHighlight(positions[i]);
 		}
 	}
