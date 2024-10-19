@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 // using System.Numerics;
-using Unity.VisualScripting;
+// using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityEngine.UIElements;
@@ -24,6 +24,8 @@ public class RenderGrid : MonoBehaviour
 	private Vector3Int? hoverPosition = null;
 
 	private Tile fill;
+
+	private Color currentColor = Color.yellow;
 
 	void Start()
 	{
@@ -70,8 +72,8 @@ public class RenderGrid : MonoBehaviour
 
 			if (!IsValidTilePosition(cellPos))
 			{
+				ClearAllHighlight();
 				points.Clear();
-				// TODO: remove all highlighting.
 				return;
 			}
 
@@ -86,9 +88,8 @@ public class RenderGrid : MonoBehaviour
 			{
 				if (points.First() == cellPos)
 				{
-					Debug.Log("Completed shape");
-					// TODO: color the shape.
-					// TODO: remove highlight.
+					FillShape();
+					ClearAllHighlight();
 					points.Clear();
 				}
 				else
@@ -209,7 +210,6 @@ public class RenderGrid : MonoBehaviour
 				return true;
 			}
 
-			Debug.Log(o1 + " " + o2 + " " + o3 + " " + o4);
 			// Existing segment and new segment are on the same line.
 			// Check for overlaps.
 			if (o1 == 0 && OnSegment(start, end, lineStart))
@@ -236,6 +236,7 @@ public class RenderGrid : MonoBehaviour
 		return false;
 	}
 
+	// Does not include the start point, but does include the end point.
 	private Vector3Int[] GetLinePositions(Vector3Int start, Vector3Int end)
 	{
 		int deltaX = end.x - start.x;
@@ -262,8 +263,7 @@ public class RenderGrid : MonoBehaviour
 
 	private void Highlight(Vector3Int cell)
 	{
-		Color source = Color.yellow;
-		Color color = new Color(source.r, source.g, source.b, 0.5f);
+		Color color = new Color(currentColor.r, currentColor.g, currentColor.b, 0.5f);
 		Vector3Int highlightPos = new Vector3Int(cell.x, cell.y, Z_LAYER_HIGHLIGHT);
 
 		tilemap.SetTile(highlightPos, fill);
@@ -277,6 +277,22 @@ public class RenderGrid : MonoBehaviour
 		for (int i = 0; i < positions.Length; ++i)
 		{
 			Highlight(positions[i]);
+		}
+	}
+
+	private void ClearAllHighlight()
+	{
+		if (points.Count == 0)
+		{
+			return;
+		}
+
+		ClearHighlight(points[0]);
+		for (int index = 0; index < points.Count; index++)
+		{
+			Vector3Int start = points[index];
+			Vector3Int end = points[(index + 1) % points.Count];
+			ClearHighlight(start, end);
 		}
 	}
 
@@ -298,6 +314,150 @@ public class RenderGrid : MonoBehaviour
 			}
 
 			ClearHighlight(positions[i]);
+		}
+	}
+
+	private void FillShape()
+	{
+		// Fill(points[0]);
+		// for (int index = 0; index < points.Count; index++)
+		// {
+		// 	Vector3Int start = points[index];
+		// 	Vector3Int end = points[(index + 1) % points.Count];
+		// 	Fill(start, end);
+		// }
+
+		// Determine min and max x and y.
+		// For all points inside of the boundary:
+		// See if they are in the shape.
+		// How do we know if they are in the shape?
+		// Cast a 'ray' from the point and count how many segments we cross.
+
+		// TODO: We have to use the lines, because of perpendicular lines.
+		// Points that are an extension of vertical lines can be falsely marked as inside the shape.
+		// TODO: we should remove these lines from checking.
+		// TODO: optimization: we don't need to look at all points every time.
+		// TODO: if the previous point (above us) was inside the shape,
+		// just see if the current point is a border.\
+
+		List<int>[,] lineGrid = new List<int>[(2 * GRID_SIZE_X), (2 * GRID_SIZE_Y)];
+		for (int index = 0; index < points.Count; index++)
+		{
+			Vector3Int start = points[index];
+			Vector3Int end = points[(index + 1) % points.Count];
+
+			List<Vector3Int> positions = new() {start};
+			foreach (Vector3Int position in GetLinePositions(start, end))
+			{
+				positions.Add(position);
+			}
+
+			foreach (Vector3Int position in positions)
+			{
+				List<int> currentLines = lineGrid[position.x + GRID_SIZE_X, position.y + GRID_SIZE_Y];
+				if (currentLines == null)
+				{
+					currentLines = new List<int>();
+					lineGrid[position.x + GRID_SIZE_X, position.y + GRID_SIZE_Y] = currentLines;
+				}
+
+				Debug.Log("Adding " + index + " to " + position);
+				currentLines.Add(index);
+			}
+		}
+
+		for (int y = -GRID_SIZE_Y; y < GRID_SIZE_Y; ++y)
+		{
+			bool shapeMode = false;
+			ISet<int> crossedLines = new HashSet<int>();
+			for (int x = -GRID_SIZE_X; x < GRID_SIZE_X; ++x)
+			{
+				List<int> lines = lineGrid[x + GRID_SIZE_X, y + GRID_SIZE_Y];
+				// Debug.Log(x + ", " + y + ": " + lines != null ? lines.Count : 0);
+				// bool highlighted = tilemap.HasTile(pos);
+
+				// if (!shapeMode && highlighted) {
+				// 	shapeMode = true;
+				// } else if (shapeMode && highlighted) {
+				// 	shapeMode = false;
+				// }
+
+				if (lines != null)
+				{
+					foreach (int line in lines)
+					{
+						crossedLines.Add(line);
+					}
+
+					// shapeMode = !shapeMode;
+				}
+
+				// if (highlighted)
+				// {
+				// 	shapeMode = !shapeMode;
+				// }
+
+				if (lines != null || crossedLines.Count % 2 != 0)
+				{
+					Vector3Int pos = new Vector3Int(x, y, Z_LAYER_HIGHLIGHT);
+					Fill((Vector2Int)pos);
+				}
+
+				// if (highlighted || shapeMode)
+				// {
+				// 	Fill((Vector2Int)pos);
+				// }
+			}
+		}
+
+		// bool[,] fillGrid = new bool[GRID_SIZE_X * 2, GRID_SIZE_Y * 2];
+		// for (int x = -GRID_SIZE_X; x < GRID_SIZE_X; ++x)
+		// {
+		// 	for (int y = -GRID_SIZE_Y; y < GRID_SIZE_Y; ++y)
+		// 	{
+		// 		Vector3Int pos = new Vector3Int(x, y, Z_LAYER_HIGHLIGHT);
+		// 		fillGrid[x + GRID_SIZE_X, y + GRID_SIZE_Y] = tilemap.HasTile(pos);
+		// 	}
+		// }
+
+		// for (int x = -GRID_SIZE_X; x < GRID_SIZE_X; ++x)
+		// {
+		// 	for (int y = -GRID_SIZE_Y; y < GRID_SIZE_Y; ++y)
+		// 	{
+		// 		bool highlighted = fillGrid[x + GRID_SIZE_X, y + GRID_SIZE_Y];
+		// 		if (highlighted)
+		// 		{
+		// 			Fill(new Vector2Int(x, y));
+		// 			continue;
+		// 		}
+
+		// 		int edges = 0;
+		// 		for (int index = -GRID_SIZE_Y; index < y; index++)
+		// 		{
+		// 			edges += fillGrid[x + GRID_SIZE_X, index + GRID_SIZE_Y] ? 1 : 0;
+		// 		}
+
+		// 		if (edges % 2 != 0)
+		// 		{
+		// 			Fill(new Vector2Int(x, y));
+		// 		}
+		// 	}
+		// }
+	}
+
+	private void Fill(Vector2Int cell)
+	{
+		Color color = new Color(currentColor.r, currentColor.g, currentColor.b, 1f);
+		Vector3Int fillPos = new Vector3Int(cell.x, cell.y, Z_LAYER_FILL);
+		tilemap.SetColor(fillPos, color);
+	}
+
+	private void Fill(Vector3Int start, Vector3Int end)
+	{
+		Vector3Int[] positions = GetLinePositions(start, end);
+		for (int i = 0; i < positions.Length; ++i)
+		{
+			// Fill(positions[i]);
 		}
 	}
 }
