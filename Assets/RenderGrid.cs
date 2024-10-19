@@ -3,8 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-// using System.Numerics;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityEngine.UIElements;
@@ -24,6 +22,8 @@ public class RenderGrid : MonoBehaviour
 	private Vector3Int? hoverPosition = null;
 
 	private Tile fill;
+
+	private Color currentColor = Color.yellow;
 
 	void Start()
 	{
@@ -57,21 +57,14 @@ public class RenderGrid : MonoBehaviour
 		Vector3 worldPos = Camera.main.ScreenToWorldPoint(mousePos);
 		Vector3Int cellPos = tilemap.WorldToCell(worldPos);
 
-		// Change the painting mechanism.
-		// Click on pixels to create a shape.
-		// Note: Only horizontal, vertical and diagonal lines are allowed.
-		// Close the shape (and paint it) by clicking on the start pixel.
-		// Note: Single pixel paining is not possible and simply clears it.
-		// Note: You can only remove the last point (by clicking on it).
-		// Note No crossing lines are allowed.
 		if (Input.GetMouseButtonUp(0))
 		{
 			hoverPosition = null;
 
 			if (!IsValidTilePosition(cellPos))
 			{
+				ClearAllHighlight();
 				points.Clear();
-				// TODO: remove all highlighting.
 				return;
 			}
 
@@ -86,9 +79,8 @@ public class RenderGrid : MonoBehaviour
 			{
 				if (points.First() == cellPos)
 				{
-					Debug.Log("Completed shape");
-					// TODO: color the shape.
-					// TODO: remove highlight.
+					FillShape();
+					ClearAllHighlight();
 					points.Clear();
 				}
 				else
@@ -209,7 +201,6 @@ public class RenderGrid : MonoBehaviour
 				return true;
 			}
 
-			Debug.Log(o1 + " " + o2 + " " + o3 + " " + o4);
 			// Existing segment and new segment are on the same line.
 			// Check for overlaps.
 			if (o1 == 0 && OnSegment(start, end, lineStart))
@@ -236,6 +227,7 @@ public class RenderGrid : MonoBehaviour
 		return false;
 	}
 
+	// Does not include the start point, but does include the end point.
 	private Vector3Int[] GetLinePositions(Vector3Int start, Vector3Int end)
 	{
 		int deltaX = end.x - start.x;
@@ -262,8 +254,7 @@ public class RenderGrid : MonoBehaviour
 
 	private void Highlight(Vector3Int cell)
 	{
-		Color source = Color.yellow;
-		Color color = new Color(source.r, source.g, source.b, 0.5f);
+		Color color = new Color(currentColor.r, currentColor.g, currentColor.b, 0.5f);
 		Vector3Int highlightPos = new Vector3Int(cell.x, cell.y, Z_LAYER_HIGHLIGHT);
 
 		tilemap.SetTile(highlightPos, fill);
@@ -277,6 +268,22 @@ public class RenderGrid : MonoBehaviour
 		for (int i = 0; i < positions.Length; ++i)
 		{
 			Highlight(positions[i]);
+		}
+	}
+
+	private void ClearAllHighlight()
+	{
+		if (points.Count == 0)
+		{
+			return;
+		}
+
+		ClearHighlight(points[0]);
+		for (int index = 0; index < points.Count; index++)
+		{
+			Vector3Int start = points[index];
+			Vector3Int end = points[(index + 1) % points.Count];
+			ClearHighlight(start, end);
 		}
 	}
 
@@ -298,6 +305,83 @@ public class RenderGrid : MonoBehaviour
 			}
 
 			ClearHighlight(positions[i]);
+		}
+	}
+
+	private void FillShape()
+	{
+		for (int y = -GRID_SIZE_Y; y < GRID_SIZE_Y; ++y)
+		{
+			bool inShape = false;
+			for (int x = -GRID_SIZE_X; x < GRID_SIZE_X; ++x)
+			{
+				// bool highlighted = IsHighlighted(Vector2Int);
+				Vector3Int pos = new Vector3Int(x, y, Z_LAYER_HIGHLIGHT);
+				bool highlighted = tilemap.HasTile(pos);
+				if (highlighted)
+				{
+					int index = points.IndexOf(new Vector3Int(x, y, Z_LAYER_FILL));
+					if (index != -1) {
+						int nextX = x;
+
+						int prevIndex = index;
+						int prevYDirection;
+						do {
+							prevIndex = (prevIndex == 0) ? points.Count - 1 : prevIndex - 1;
+							prevYDirection = y - points[prevIndex].y;
+
+							if (prevYDirection == 0) {
+								nextX = Math.Max(nextX, points[prevIndex].x);
+							}
+						} while (prevYDirection == 0);
+
+						int nextIndex = index;
+						int nextYDirection;
+						do {
+							nextIndex = (nextIndex == points.Count - 1) ? 0 : nextIndex + 1;
+							nextYDirection = points[nextIndex].y - y;
+
+							if (nextYDirection == 0) {
+								nextX = Math.Max(nextX, points[nextIndex].x);
+							}
+						} while (nextYDirection == 0);
+						
+						if (nextX != x) {
+							Fill((Vector2Int)pos);
+							Fill(pos, new Vector3Int(nextX, y, Z_LAYER_FILL));
+
+							x = nextX;
+						}
+
+						// If monoticity does not change, we are no longer in the shape.
+						if (prevYDirection * nextYDirection > 0) {
+							inShape = !inShape;
+						}
+					} else {
+						inShape = !inShape;
+					}
+				}
+				
+				if (highlighted || inShape) {
+					Fill((Vector2Int)pos);
+				}
+			}
+		}
+	}
+
+	private void Fill(Vector2Int cell)
+	{
+		Color color = new Color(currentColor.r, currentColor.g, currentColor.b, 1f);
+		Vector3Int fillPos = new Vector3Int(cell.x, cell.y, Z_LAYER_FILL);
+		tilemap.SetColor(fillPos, color);
+	}
+
+	private void Fill(Vector3Int start, Vector3Int end)
+	{
+		Vector3Int[] positions = GetLinePositions(start, end);
+		for (int i = 0; i < positions.Length; ++i)
+		{
+			Fill((Vector2Int)positions[i]);
 		}
 	}
 }
