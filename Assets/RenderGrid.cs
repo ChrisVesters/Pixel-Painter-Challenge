@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -75,9 +74,19 @@ public class RenderGrid : MonoBehaviour
 				return;
 			}
 
+			if (points[points.Count - 1] == cellPos)
+			{
+				ClearHighlight(cellPos);
+				if (points.Count > 1) {
+					ClearHighlight(points[points.Count - 2], cellPos);
+				}
+				points.Remove(cellPos);
+				return;
+			}
+
 			if (IsValidPoint(cellPos))
 			{
-				if (points.First() == cellPos)
+				if (points[0] == cellPos)
 				{
 					FillShape();
 					ClearAllHighlight();
@@ -97,12 +106,12 @@ public class RenderGrid : MonoBehaviour
 
 		if (hoverPosition.HasValue && IsValidPoint(hoverPosition.Value))
 		{
-			ClearHighlight(points.Last(), hoverPosition.Value);
+			ClearHighlight(points[points.Count - 1], hoverPosition.Value);
 		}
 
 		if (IsValidPoint(cellPos))
 		{
-			Highlight(points.Last(), cellPos);
+			Highlight(points[points.Count - 1], cellPos);
 		}
 
 		hoverPosition = cellPos;
@@ -120,7 +129,12 @@ public class RenderGrid : MonoBehaviour
 			return false;
 		}
 
-		Vector3Int start = points.Last();
+		if (points.Count == 0)
+		{
+			return true;
+		}
+
+		Vector3Int start = points[points.Count - 1];
 		return IsValidLine(start, end) && !CrossesOtherLines(start, end);
 	}
 
@@ -162,7 +176,7 @@ public class RenderGrid : MonoBehaviour
 	{
 		// Well, no, not if there is no other segment yet.
 		int startIndex = 0;
-		if ((points.Count > 2) && (end == points.First()))
+		if ((points.Count > 2) && (end == points[0]))
 		{
 			startIndex = 1;
 		}
