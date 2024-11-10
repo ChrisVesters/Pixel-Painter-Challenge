@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
+using static LevelManager;
+
 public class RenderGrid : MonoBehaviour
 {
 	private const int GRID_SIZE_X = 6;
@@ -19,8 +21,6 @@ public class RenderGrid : MonoBehaviour
 	private Vector2Int? hoverPosition = null;
 
 	private Tile fill;
-
-	private Color currentColor = Color.yellow;
 
 	void Start()
 	{
@@ -267,6 +267,7 @@ public class RenderGrid : MonoBehaviour
 
 	private void Highlight(Vector2Int cell)
 	{
+		Color currentColor = LevelManager.Instance.currentColor;
 		Color color = new(currentColor.r, currentColor.g, currentColor.b, 0.5f);
 		Vector3Int highlightPos = new(cell.x, cell.y, Z_LAYER_HIGHLIGHT);
 
@@ -399,6 +400,7 @@ public class RenderGrid : MonoBehaviour
 
 	private void Fill(Vector2Int cell)
 	{
+		Color currentColor = LevelManager.Instance.currentColor;
 		Color color = new(currentColor.r, currentColor.g, currentColor.b, 1f);
 		Vector3Int fillPos = new(cell.x, cell.y, Z_LAYER_FILL);
 		tilemap.SetColor(fillPos, color);
