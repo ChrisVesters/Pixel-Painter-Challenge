@@ -8,9 +8,6 @@ using static LevelManager;
 
 public class RenderGrid : MonoBehaviour
 {
-	private const int GRID_SIZE_X = 6;
-	private const int GRID_SIZE_Y = 6;
-
 	private const int Z_LAYER_BORDER = -1;
 	private const int Z_LAYER_FILL = 0;
 	private const int Z_LAYER_HIGHLIGHT = 1;
@@ -29,19 +26,19 @@ public class RenderGrid : MonoBehaviour
 
 		Tile border = Resources.Load<Tile>("Border");
 
-		Color[] colours = new Color[] { Color.yellow, Color.red, Color.green, Color.blue, Color.cyan, Color.magenta };
-
-		for (int y = -GRID_SIZE_Y; y < GRID_SIZE_Y; ++y)
+		LevelManager levelManager = LevelManager.Instance;
+		for (int y = -levelManager.gridSizeY; y < levelManager.gridSizeY; ++y)
 		{
-			for (int x = -GRID_SIZE_X; x < GRID_SIZE_X; ++x)
+			for (int x = -levelManager.gridSizeX; x < levelManager.gridSizeX; ++x)
 			{
-				Vector3Int borderPos = new Vector3Int(x, y, Z_LAYER_BORDER);
-				Vector3Int pos = new Vector3Int(x, y, Z_LAYER_FILL);
+				Vector2Int cellPos = new(x, y);
 
+				Vector3Int borderPos = new Vector3Int(x, y, Z_LAYER_BORDER);
 				tilemap.SetTile(borderPos, border);
 				tilemap.SetTileFlags(borderPos, TileFlags.None);
-				tilemap.SetColor(borderPos, colours[(Math.Abs(x) + Math.Abs(y)) % 6]);
+				tilemap.SetColor(borderPos, levelManager.getCellColor(cellPos));
 
+				Vector3Int pos = new Vector3Int(x, y, Z_LAYER_FILL);
 				tilemap.SetTile(pos, fill);
 				tilemap.SetTileFlags(pos, TileFlags.None);
 			}
@@ -330,10 +327,11 @@ public class RenderGrid : MonoBehaviour
 
 	private void FillShape()
 	{
-		for (int y = -GRID_SIZE_Y; y < GRID_SIZE_Y; ++y)
+		LevelManager levelManager = LevelManager.Instance;
+		for (int y = -levelManager.gridSizeY; y < levelManager.gridSizeY; ++y)
 		{
 			bool inShape = false;
-			for (int x = -GRID_SIZE_X; x < GRID_SIZE_X; ++x)
+			for (int x = -levelManager.gridSizeX; x < levelManager.gridSizeX; ++x)
 			{
 				Vector2Int pos = new(x, y);
 				bool highlighted = IsHighlighted(pos);
