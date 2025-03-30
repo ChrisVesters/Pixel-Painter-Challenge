@@ -8,6 +8,10 @@ public class LevelManager : MonoBehaviour
 {
 	public static LevelManager Instance { get; private set; }
 
+	public TextAsset levelFile;
+
+	private LevelData levelData;
+
 	public int gridSizeX { get; private set; } = 6;
 	public int gridSizeY { get; private set; } = 6;
 
@@ -23,15 +27,17 @@ public class LevelManager : MonoBehaviour
 		}
 		Instance = this;
 
+		levelData = JsonUtility.FromJson<LevelData>(levelFile.text);
+
 		levelColors = new Color[2 * gridSizeY, 2 * gridSizeX];
-		Color[] colours = new Color[] { Color.yellow, Color.red, Color.green, Color.blue, Color.cyan, Color.magenta };
 		for (int y = -gridSizeY; y < gridSizeY; ++y)
 		{
 			int yIndex = y + gridSizeY;
 			for (int x = -gridSizeX; x < gridSizeX; ++x)
 			{
 				int xIndex = x + gridSizeX;
-				levelColors[yIndex, xIndex] = (colours[(Math.Abs(x) + Math.Abs(y)) % 6]);
+				int offset = (yIndex * 2 * gridSizeX) + xIndex;
+				levelColors[yIndex, xIndex] = levelData.colors[levelData.grid[offset]];
 			}
 		}
 	}
@@ -41,5 +47,9 @@ public class LevelManager : MonoBehaviour
 		int y = cell.y + gridSizeY;
 		int x = cell.x + gridSizeX;
 		return levelColors[y, x];
+	}
+
+	public Color[] getPaintColors() {
+		return levelData.colors;
 	}
 }

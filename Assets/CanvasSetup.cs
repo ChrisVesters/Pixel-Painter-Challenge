@@ -17,7 +17,7 @@ public class CanvasSetup : MonoBehaviour
         int gridWidth = (LevelManager.Instance.gridSizeX * 2) * 26;
         int width = gridWidth - 50;
 
-        Color[] colors = new Color[] { Color.red, Color.green, Color.blue, Color.yellow };
+        Color[] colors = LevelManager.Instance.getPaintColors();
         for (int index = 0; index < colors.Length; index++)
         {
             int x = START_X + (width / (colors.Length - 1)) * index;
