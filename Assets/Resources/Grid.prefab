@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6464739716561829183}
   - component: {fileID: 3434548727757125805}
   - component: {fileID: 1340827397112490752}
+  - component: {fileID: 8662119302879208729}
   m_Layer: 0
   m_Name: Layer1
   m_TagString: Untagged
@@ -42,6 +43,16 @@ Tilemap:
   m_GameObject: {fileID: 2506747149220087296}
   m_Enabled: 1
   m_Tiles:
+  - first: {x: 0, y: -1, z: 0}
+    second:
+      serializedVersion: 2
+      m_TileIndex: 2
+      m_TileSpriteIndex: 2
+      m_TileMatrixIndex: 0
+      m_TileColorIndex: 0
+      m_TileObjectToInstantiateIndex: 65535
+      dummyAlignment: 0
+      m_AllTileFlags: 1073741825
   - first: {x: -1, y: 0, z: 0}
     second:
       serializedVersion: 2
@@ -68,13 +79,17 @@ Tilemap:
     m_Data: {fileID: 11400000, guid: 8e92becffe61b154c8463d318d9e7a5a, type: 2}
   - m_RefCount: 1
     m_Data: {fileID: 11400000, guid: 7a74963ac4325e24b9b8d5f7a4302006, type: 2}
+  - m_RefCount: 1
+    m_Data: {fileID: 11400000, guid: 3e430a244d2e94fef80a415dc0fb2bcc, type: 2}
   m_TileSpriteArray:
   - m_RefCount: 1
     m_Data: {fileID: 21300000, guid: 95b61e0c0cc4f3f4486e51a8f8f88d56, type: 3}
   - m_RefCount: 1
     m_Data: {fileID: 21300000, guid: 6dd814b9df87fd44d94e0c3a691330f9, type: 3}
+  - m_RefCount: 1
+    m_Data: {fileID: 21300000, guid: 0c8043a04440fa56b915e6456b560451, type: 3}
   m_TileMatrixArray:
-  - m_RefCount: 2
+  - m_RefCount: 3
     m_Data:
       e00: 1
       e01: 0
@@ -93,13 +108,13 @@ Tilemap:
       e32: 0
       e33: 1
   m_TileColorArray:
-  - m_RefCount: 2
+  - m_RefCount: 3
     m_Data: {r: 1, g: 1, b: 1, a: 1}
   m_TileObjectToInstantiateArray: []
   m_AnimationFrameRate: 1
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Origin: {x: -1, y: 0, z: 0}
-  m_Size: {x: 2, y: 1, z: 1}
+  m_Origin: {x: -1, y: -1, z: 0}
+  m_Size: {x: 2, y: 2, z: 1}
   m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
   m_TileOrientation: 0
   m_TileOrientationMatrix:
@@ -168,6 +183,30 @@ TilemapRenderer:
   m_Mode: 0
   m_DetectChunkCullingBounds: 0
   m_MaskInteraction: 0
+--- !u!114 &8662119302879208729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2506747149220087296}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7bb9acb2cffc5f45abddc238a0ad9b0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_PositionIntKeys: []
+  m_PositionIntValues: 
+  m_PositionStringKeys: []
+  m_PositionStringValues: []
+  m_PositionFloatKeys: []
+  m_PositionFloatValues: []
+  m_PositionDoubleKeys: []
+  m_PositionDoubleValues: []
+  m_PositionObjectKeys: []
+  m_PositionObjectValues: []
+  m_PositionColorKeys: []
+  m_PositionColorValues: []
 --- !u!1 &8969801236519999945
 GameObject:
   m_ObjectHideFlags: 0
@@ -213,7 +252,7 @@ Grid:
   m_CellGap: {x: 0, y: 0, z: 0}
   m_CellLayout: 0
   m_CellSwizzle: 0
---- !u!114 &5727269333345460003
+--- !u!114 &4589034818903630916
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

@@ -8,7 +8,7 @@ using static LevelManager;
 
 public class RenderGrid : MonoBehaviour
 {
-	private const int Z_LAYER_BORDER = -1;
+	private const int Z_LAYER_BORDER = 2;
 	private const int Z_LAYER_FILL = 0;
 	private const int Z_LAYER_HIGHLIGHT = 1;
 
@@ -18,11 +18,15 @@ public class RenderGrid : MonoBehaviour
 	private Vector2Int? hoverPosition = null;
 
 	private Tile fill;
+	private Tile fillCorner;
+
+	private int correctCells = 0;
 
 	void Start()
 	{
 		tilemap = GetComponent<Tilemap>();
 		fill = Resources.Load<Tile>("Fill");
+		fillCorner = Resources.Load<Tile>("Fill Corner");
 
 		Tile border = Resources.Load<Tile>("Border");
 
@@ -64,7 +68,7 @@ public class RenderGrid : MonoBehaviour
 
 			if (points.Count == 0)
 			{
-				Highlight(cellPos);
+				HighlightCorner(cellPos);
 				points.Add(cellPos);
 				return;
 			}
@@ -90,6 +94,7 @@ public class RenderGrid : MonoBehaviour
 				}
 				else
 				{
+					HighlightCorner(cellPos);
 					points.Add(cellPos);
 				}
 			}
@@ -262,13 +267,17 @@ public class RenderGrid : MonoBehaviour
 		return positions;
 	}
 
-	private void Highlight(Vector2Int cell)
+	private void HighlightCorner(Vector2Int cell)
 	{
+		Highlight(cell, fillCorner);
+	}
+
+	private void Highlight(Vector2Int cell, Tile tile) {
 		Color currentColor = LevelManager.Instance.currentColor;
 		Color color = new(currentColor.r, currentColor.g, currentColor.b, 0.5f);
 		Vector3Int highlightPos = new(cell.x, cell.y, Z_LAYER_HIGHLIGHT);
 
-		tilemap.SetTile(highlightPos, fill);
+		tilemap.SetTile(highlightPos, tile);
 		tilemap.SetTileFlags(highlightPos, TileFlags.None);
 		tilemap.SetColor(highlightPos, color);
 	}
@@ -276,9 +285,15 @@ public class RenderGrid : MonoBehaviour
 	private void Highlight(Vector2Int start, Vector2Int end)
 	{
 		Vector2Int[] positions = GetLinePositions(start, end);
-		for (int i = 0; i < positions.Length; ++i)
+
+		int endIndex = positions.Length;
+		if (end == points[0]) {
+			endIndex -= 1;
+		}
+
+		for (int i = 0; i < endIndex; ++i)
 		{
-			Highlight(positions[i]);
+			Highlight(positions[i], fill);
 		}
 	}
 
@@ -386,7 +401,7 @@ public class RenderGrid : MonoBehaviour
 					{
 						inShape = !inShape;
 					}
-				}
+				} 
 
 				if (highlighted || inShape)
 				{
@@ -398,10 +413,23 @@ public class RenderGrid : MonoBehaviour
 
 	private void Fill(Vector2Int cell)
 	{
-		Color currentColor = LevelManager.Instance.currentColor;
-		Color color = new(currentColor.r, currentColor.g, currentColor.b, 1f);
+		LevelManager levelManager = LevelManager.Instance;
+		Color targetColor = levelManager.getCellColor(cell);
+		Color paintingColor = levelManager.currentColor;
+		Color currentColor = tilemap.GetColor(new Vector3Int(cell.x, cell.y, Z_LAYER_FILL));
+
+		if (currentColor == paintingColor) {
+			return;
+		}
+
+		if (paintingColor == targetColor) {
+			++correctCells;
+		} else if (currentColor == targetColor) {
+			--correctCells;
+		}
+
 		Vector3Int fillPos = new(cell.x, cell.y, Z_LAYER_FILL);
-		tilemap.SetColor(fillPos, color);
+		tilemap.SetColor(fillPos, paintingColor);
 	}
 
 	private void Fill(Vector2Int start, Vector2Int end)
