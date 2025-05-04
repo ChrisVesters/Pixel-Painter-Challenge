@@ -3,12 +3,16 @@ using System.Collections.Generic;
 
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using TMPro;
 
 public class LevelManager : MonoBehaviour
 {
 	public static LevelManager Instance { get; private set; }
 
 	public TextAsset levelFile;
+
+	public TextMeshProUGUI cellsLabel;
+	public TextMeshProUGUI movesLabel;
 
 	private LevelData levelData;
 
@@ -17,6 +21,9 @@ public class LevelManager : MonoBehaviour
 
 	private Color[,] levelColors;
 	public Color currentColor { get; set; } = Color.white;
+
+	private int correctCells = 0;
+	private int movesLeft;
 
 	private void Awake()
 	{
@@ -40,6 +47,11 @@ public class LevelManager : MonoBehaviour
 				levelColors[yIndex, xIndex] = levelData.colors[levelData.grid[offset]];
 			}
 		}
+
+		movesLeft = levelData.moves;
+
+		updateCellsLabel();
+		updateMovesLabel();
 	}
 
 	public Color getCellColor(Vector2Int cell)
@@ -51,5 +63,35 @@ public class LevelManager : MonoBehaviour
 
 	public Color[] getPaintColors() {
 		return levelData.colors;
+	}
+
+	public void increaseCorrectCells()
+	{
+		++correctCells;
+		updateCellsLabel();
+		// TODO: Check for win!
+	}
+
+	public void decreaseCorrectCells()
+	{
+		--correctCells;
+		updateCellsLabel();
+	}
+
+	public void decreaseMovesLeft()
+	{
+		--movesLeft;
+		updateMovesLabel();
+		// TODO: Check for game over
+	}
+
+	private void updateCellsLabel()
+	{
+		cellsLabel.text = correctCells + "/" + (2 * gridSizeX) * (2 * gridSizeY);
+	}
+
+	private void updateMovesLabel()
+	{
+		movesLabel.text = movesLeft.ToString();
 	}
 }

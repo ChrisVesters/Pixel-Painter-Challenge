@@ -20,8 +20,6 @@ public class RenderGrid : MonoBehaviour
 	private Tile fill;
 	private Tile fillCorner;
 
-	private int correctCells = 0;
-
 	void Start()
 	{
 		tilemap = GetComponent<Tilemap>();
@@ -91,6 +89,7 @@ public class RenderGrid : MonoBehaviour
 					FillShape();
 					ClearAllHighlight();
 					points.Clear();
+					LevelManager.Instance.decreaseMovesLeft();
 				}
 				else
 				{
@@ -423,9 +422,9 @@ public class RenderGrid : MonoBehaviour
 		}
 
 		if (paintingColor == targetColor) {
-			++correctCells;
+			levelManager.increaseCorrectCells();
 		} else if (currentColor == targetColor) {
-			--correctCells;
+			levelManager.decreaseCorrectCells();
 		}
 
 		Vector3Int fillPos = new(cell.x, cell.y, Z_LAYER_FILL);
